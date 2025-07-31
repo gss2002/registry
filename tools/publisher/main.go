@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/modelcontextprotocol/registry/tools/publisher/auth"
 	"github.com/modelcontextprotocol/registry/tools/publisher/auth/github"
+	"github.com/modelcontextprotocol/registry/tools/publisher/auth/oidc"
 )
 
 // Server structure types for JSON generation
@@ -66,17 +66,14 @@ func main() {
 		return
 	}
 
-	var err error
-	switch os.Args[1] {
+	command := os.Args[1]
+	switch command {
 	case "publish":
-		err = publishCommand()
+		publishCommand()
 	case "create":
-		err = createCommand()
+		createCommand()
 	default:
 		printUsage()
-	}
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 
@@ -90,7 +87,7 @@ func printUsage() {
 	fmt.Fprint(os.Stdout, "Use 'mcp-publisher <command> --help' for more information about a command.\n")
 }
 
-func publishCommand() error {
+func publishCommand() {
 	publishFlags := flag.NewFlagSet("publish", flag.ExitOnError)
 
 	var registryURL string
@@ -123,13 +120,14 @@ func publishCommand() error {
 
 	if registryURL == "" || mcpFilePath == "" {
 		publishFlags.Usage()
-		return errors.New("registry-url and mcp-file are required")
+		return
 	}
 
 	// Read MCP file
 	mcpData, err := os.ReadFile(mcpFilePath)
 	if err != nil {
-		return fmt.Errorf("error reading MCP file: %w", err)
+		log.Printf("Error reading MCP file: %s\n", err.Error())
+		return
 	}
 
 	var authProvider auth.Provider // Determine the authentication method
@@ -137,8 +135,14 @@ func publishCommand() error {
 	case "github-oauth":
 		log.Println("Using GitHub OAuth for authentication")
 		authProvider = github.NewOAuthProvider(forceLogin, registryURL)
+
+        case "oidc-bearer":  // ← ADD THIS CASE
+                log.Println("Using OIDC Bearer Token for authentication")
+                authProvider = oidc.NewBearerProvider(forceLogin)
+
 	default:
-		return fmt.Errorf("unsupported authentication method: %s", authMethod)
+		log.Printf("Unsupported authentication method: %s\n", authMethod)
+		return
 	}
 
 	// Check if login is needed and perform authentication
@@ -146,27 +150,29 @@ func publishCommand() error {
 	if authProvider.NeedsLogin() {
 		err := authProvider.Login(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to authenticate with %s: %w", authProvider.Name(), err)
+			log.Printf("Failed to authenticate with %s: %s\n", authProvider.Name(), err.Error())
+			return
 		}
 	}
 
 	// Get the token
 	token, err := authProvider.GetToken(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting token from %s: %w", authProvider.Name(), err)
+		log.Printf("Error getting token from %s: %s\n", authProvider.Name(), err.Error())
+		return
 	}
 
 	// Publish to registry
 	err = publishToRegistry(registryURL, mcpData, token)
 	if err != nil {
-		return fmt.Errorf("failed to publish to registry: %w", err)
+		log.Printf("Failed to publish to registry: %s\n", err.Error())
+		return
 	}
 
 	log.Println("Successfully published to registry!")
-	return nil
 }
 
-func createCommand() error {
+func createCommand() {
 	createFlags := flag.NewFlagSet("create", flag.ExitOnError)
 
 	// Basic server information flags
@@ -246,13 +252,13 @@ func createCommand() error {
 
 	// Validate required flags
 	if name == "" {
-		return errors.New("--name/-n is required")
+		log.Fatal("Error: --name/-n is required")
 	}
 	if description == "" {
-		return errors.New("--description/-d is required")
+		log.Fatal("Error: --description/-d is required")
 	}
 	if repoURL == "" {
-		return errors.New("--repo-url is required")
+		log.Fatal("Error: --repo-url is required")
 	}
 
 	// Set defaults
@@ -263,16 +269,6 @@ func createCommand() error {
 		packageVersion = version
 	}
 
-	// Set runtime hint based on registry name if not explicitly provided
-	if runtimeHint == "" {
-		switch registryName {
-		case "docker":
-			runtimeHint = "docker"
-		case "npm":
-			runtimeHint = "npx"
-		}
-	}
-
 	// Create server structure
 	server := createServerStructure(name, description, version, repoURL, repoSource,
 		registryName, packageName, packageVersion, runtimeHint, execute, envVars, packageArgs)
@@ -280,13 +276,13 @@ func createCommand() error {
 	// Convert to JSON
 	jsonData, err := json.MarshalIndent(server, "", "  ")
 	if err != nil {
-		return fmt.Errorf("error marshaling JSON: %w", err)
+		log.Fatalf("Error marshaling JSON: %v", err)
 	}
 
 	// Write to file
 	err = os.WriteFile(output, jsonData, 0600)
 	if err != nil {
-		return fmt.Errorf("error writing file: %w", err)
+		log.Fatalf("Error writing file: %v", err)
 	}
 
 	log.Printf("Successfully created %s", output)
@@ -295,7 +291,6 @@ func createCommand() error {
 	log.Println("  - Set environment variable requirements")
 	log.Println("  - Add remote server configurations")
 	log.Println("  - Adjust runtime arguments")
-	return nil
 }
 
 // publishToRegistry sends the MCP server details to the registry with authentication

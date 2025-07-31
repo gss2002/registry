@@ -9,6 +9,17 @@ WORKDIR /app
 COPY --from=builder /build/registry .
 COPY --from=builder /app/data/seed_2025_05_16.json /app/data/seed.json
 COPY --from=builder /app/internal/docs/swagger.yaml /app/internal/docs/swagger.yaml
+# Set the auth method
+ENV MCP_REGISTRY_OIDC_ENABLED=true \
+    MCP_REGISTRY_OIDC_ISSUER_URL="https://dex.dev.example.com/dex" \
+    MCP_REGISTRY_OIDC_CLIENT_ID="mcp-registry-client" \
+    MCP_REGISTRY_OIDC_AUDIENCE="mcp-registry-client" \
+    MCP_REGISTRY_OIDC_REQUIRED_SCOPES="openid,profile,email" \
+    MCP_REGISTRY_AUTH_METHOD="oidc-bearer" \
+    ENVIRONMENT="production"
+
+
+
 EXPOSE 8080
 
 ENTRYPOINT ["./registry"]
