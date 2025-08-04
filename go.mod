@@ -4,7 +4,9 @@ go 1.23.0
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
+	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/http-swagger v1.3.4
@@ -37,6 +39,9 @@ require (
 	golang.org/x/tools v0.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// temporary replace directive to use local version of the module so we can share in different orgs
+replace github.com/modelcontextprotocol/registry => ./
 
 // temporary replace directive to use local version of the module so we can share in different orgs
 replace github.com/modelcontextprotocol/registry => ./

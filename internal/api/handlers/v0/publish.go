@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 	"net/http"
 	"strings"
 
@@ -73,15 +74,22 @@ func PublishHandler(registry service.RegistryService, authService auth.Service) 
 			token = authHeader[7:]
 		}
 
-		// Determine authentication method based on server name prefix
+		// ALWAYS require authentication for publishing
+		authMethodEnv := os.Getenv("MCP_REGISTRY_AUTH_METHOD")
+		if authMethodEnv == "" {
+		    http.Error(w, "MCP_REGISTRY_AUTH_METHOD environment variable must be set", http.StatusInternalServerError)
+		    return
+		}
+
 		var authMethod model.AuthMethod
-		switch {
-		case strings.HasPrefix(serverDetail.Name, "io.github"):
-			authMethod = model.AuthMethodGitHub
-		// Additional cases can be added here for other prefixes
+		switch authMethodEnv {
+		case "oidc-bearer":
+		    authMethod = model.AuthMethodOIDC
+		case "github-oauth":
+		    authMethod = model.AuthMethodGitHub
 		default:
-			// Keep the default auth method as AuthMethodNone
-			authMethod = model.AuthMethodNone
+		    http.Error(w, "Unsupported AUTH_METHOD: " + authMethodEnv, http.StatusInternalServerError)
+		    return
 		}
 
 		serverName := html.EscapeString(serverDetail.Name)
