@@ -24,6 +24,14 @@ type Config struct {
 	Version            string       `env:"VERSION" envDefault:"dev"`
 	GithubClientID     string       `env:"GITHUB_CLIENT_ID" envDefault:""`
 	GithubClientSecret string       `env:"GITHUB_CLIENT_SECRET" envDefault:""`
+        // OIDC Configuration
+	OIDCEnabled        bool         `env:"OIDC_ENABLED" envDefault:"false"`
+	OIDCIssuer         string       `env:"OIDC_ISSUER_URL" envDefault:""`
+	OIDCAudience       string       `env:"OIDC_AUDIENCE" envDefault:""`
+	OIDCClientID       string       `env:"OIDC_CLIENT_ID" envDefault:""`
+	OIDCRequiredScopes []string     `env:"OIDC_REQUIRED_SCOPES" envDefault:"openid,profile" envSeparator:","`
+	OIDCMaxTokenAge    string       `env:"OIDC_MAX_TOKEN_AGE" envDefault:"24h"`
+	OIDCClockSkew      string       `env:"OIDC_CLOCK_SKEW" envDefault:"5m"`
 }
 
 // NewConfig creates a new configuration with default values
@@ -34,6 +42,15 @@ func NewConfig() *Config {
 	})
 	if err != nil {
 		panic(err)
+	}
+	// Validate OIDC configuration if enabled
+	if cfg.OIDCEnabled {
+		if cfg.OIDCIssuer == "" {
+			panic("OIDC_ISSUER_URL is required when OIDC is enabled")
+		}
+		if cfg.OIDCAudience == "" {
+			panic("OIDC_AUDIENCE is required when OIDC is enabled")
+		}
 	}
 	return &cfg
 }

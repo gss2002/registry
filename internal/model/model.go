@@ -6,6 +6,8 @@ type AuthMethod string
 const (
 	// AuthMethodGitHub represents GitHub OAuth authentication
 	AuthMethodGitHub AuthMethod = "github"
+	// AuthMethodOidc
+	AuthMethodOIDC AuthMethod = "oidc"  // Add this line
 	// AuthMethodNone represents no authentication
 	AuthMethodNone AuthMethod = "none"
 )
