@@ -1,0 +1,7 @@
+config:
+  mcp-registry:environment: local
+  mcp-registry:provider: local
+  mcp-registry:githubClientId: test-client-id
+  mcp-registry:githubClientSecret:
+    secure: v1:gt5MBuW7QPiJymkh:1+I2eFChsrUH18cLELq9OAIN94MLH0SldbOuPp2C
+encryptionsalt: v1:ijIHaqhbXVA=:v1:7voX1Kv+Bunz33iN:fyVHMOhlGIymzJ+ILgUBy3ExTwUUnA==

@@ -7,7 +7,7 @@ info:
 servers:
   - url: /
     description: Default server
-  
+
 tags:
   - name: health
     description: Health checking operations
@@ -98,6 +98,25 @@ paths:
                       $ref: '#/components/schemas/Server'
                   metadata:
                     $ref: '#/components/schemas/PaginationMetadata'
+              example:
+                servers:
+                  - id: "123e4567-e89b-12d3-a456-426614174000"
+                    name: "io.github.modelcontextprotocol/filesystem"
+                    description: "Node.js server implementing Model Context Protocol (MCP) for filesystem operations."
+                    status: "active"
+                    repository:
+                      url: "https://github.com/modelcontextprotocol/servers"
+                      source: "github"
+                      id: "b94b5f7e-c7c6-d760-2c78-a5e9b8a5b8c9"
+                    version_detail:
+                      version: "1.0.2"
+                      release_date: "2023-06-15T10:30:00Z"
+                      is_latest: true
+                    created_at: "2025-05-17T17:34:22.912Z"
+                    updated_at: "2025-05-17T17:34:22.912Z"
+                metadata:
+                  next_cursor: "123e4567-e89b-12d3-a456-426614174000"
+                  count: 30
         '400':
           description: Invalid cursor or limit parameter
         '405':
@@ -124,6 +143,46 @@ paths:
                 repo_ref:
                   type: string
                   description: Repository reference used for authentication (defaults to server name if not provided)
+            example:
+              server_detail:
+                description: "<your description here>"
+                name: "io.github.<owner>/<server-name>"
+                packages:
+                  - registry_name: "npm"
+                    name: "@<owner>/<server-name>"
+                    version: "0.2.23"
+                    package_arguments:
+                      - description: "Specify services and permissions."
+                        is_required: true
+                        format: "string"
+                        value: "-s"
+                        default: "-s"
+                        type: "positional"
+                        value_hint: "-s"
+                    environment_variables:
+                      - description: "API Key to access the server"
+                        name: "API_KEY"
+                  - registry_name: "docker"
+                    name: "@<owner>/<server-name>-cli"
+                    version: "0.123.223"
+                    runtime_hint: "docker"
+                    runtime_arguments:
+                      - description: "Specify services and permissions."
+                        is_required: true
+                        format: "string"
+                        value: "--mount"
+                        default: "--mount"
+                        type: "positional"
+                        value_hint: "--mount"
+                    environment_variables:
+                      - description: "API Key to access the server"
+                        name: "API_KEY"
+                repository:
+                  url: "https://github.com/<owner>/<server-name>"
+                  source: "github"
+                version_detail:
+                  version: "0.0.1-<publisher_version>"
+              repo_ref: "optional-repository-reference"
       responses:
         '201':
           description: Server published successfully
@@ -192,7 +251,41 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Server'
+                $ref: '#/components/schemas/ServerDetail'
+              example:
+                id: "01129bff-3d65-4e3d-8e82-6f2f269f818c"
+                name: "io.github.gongrzhe/redis-mcp-server"
+                description: "A Redis MCP server implementation for interacting with Redis databases. This server enables LLMs to interact with Redis key-value stores through a set of standardized tools."
+                status: "active"
+                repository:
+                  url: "https://github.com/GongRzhe/REDIS-MCP-Server"
+                  source: "github"
+                  id: "907849235"
+                version_detail:
+                  version: "0.0.1-seed"
+                  release_date: "2025-05-16T19:13:21Z"
+                  is_latest: true
+                created_at: "2025-05-17T17:34:22.912Z"
+                updated_at: "2025-05-17T17:34:22.912Z"
+                packages:
+                  - registry_name: "docker"
+                    name: "@gongrzhe/server-redis-mcp"
+                    version: "1.0.0"
+                    package_arguments:
+                      - description: "Docker image to run"
+                        is_required: true
+                        format: "string"
+                        value: "mcp/redis"
+                        default: "mcp/redis"
+                        type: "positional"
+                        value_hint: "mcp/redis"
+                      - description: "Redis server connection string"
+                        is_required: true
+                        format: "string"
+                        value: "redis://host.docker.internal:6379"
+                        default: "redis://host.docker.internal:6379"
+                        type: "positional"
+                        value_hint: "host.docker.internal:6379"
         '400':
           description: Invalid ID format
         '404':
@@ -211,6 +304,10 @@ components:
   schemas:
     Server:
       type: object
+      required:
+        - name
+        - description
+        - version_detail
       properties:
         id:
           type: string
@@ -218,14 +315,22 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
-          example: "Example MCP Server"
-        url:
-          type: string
-          format: uri
-          example: "https://example.com/mcp"
+          description: "Server name/identifier"
+          example: "io.github.modelcontextprotocol/filesystem"
         description:
           type: string
-          example: "An example MCP server"
+          description: "Human-readable description of the server's functionality"
+          example: "Node.js server implementing Model Context Protocol (MCP) for filesystem operations."
+        status:
+          type: string
+          enum: [active, deprecated]
+          default: active
+          description: "Server lifecycle status. 'deprecated' indicates the server is no longer recommended for new usage."
+          example: "active"
+        repository:
+          $ref: '#/components/schemas/Repository'
+        version_detail:
+          $ref: '#/components/schemas/VersionDetail'
         created_at:
           type: string
           format: date-time
@@ -243,3 +348,187 @@ components:
         count:
           type: integer
           example: 30
+    
+    Repository:
+      type: object
+      required:
+        - url
+        - source
+        - id
+      properties:
+        url:
+          type: string
+          format: uri
+          example: "https://github.com/modelcontextprotocol/servers"
+        source:
+          type: string
+          example: "github"
+        id:
+          type: string
+          example: "b94b5f7e-c7c6-d760-2c78-a5e9b8a5b8c9"
+    
+    VersionDetail:
+      type: object
+      required:
+        - version
+        - release_date
+        - is_latest
+      properties:
+        version:
+          type: string
+          example: "1.0.2"
+          description: Equivalent of Implementation.version in MCP specification.
+        release_date:
+          type: string
+          format: date-time
+          example: "2023-06-15T10:30:00Z"
+          description: Datetime that the MCP server version was published to the registry.
+        is_latest:
+          type: boolean
+          example: true
+          description: Whether the MCP server version is the latest version available in the registry.
+    
+    ServerDetail:
+      description: Schema for a static representation of an MCP server. Used in various contexts related to discovery, installation, and configuration.
+      allOf:
+        - $ref: '#/components/schemas/Server'
+        - type: object
+          properties:
+            packages:
+              type: array
+              items:
+                $ref: '#/components/schemas/Package'
+            remotes:
+              type: array
+              items:
+                $ref: '#/components/schemas/Remote'
+
+    Package:
+      type: object
+      required:
+        - registry_name
+        - name
+        - version
+      properties:
+        registry_name:
+          type: string
+          description: Package registry type
+          example: "npm"
+        name:
+          type: string
+          description: Package name in the registry
+          example: "io.modelcontextprotocol/filesystem"
+        version:
+          type: string
+          description: Package version
+          example: "1.0.2"
+        runtime_hint:
+          type: string
+          description: A hint to help clients determine the appropriate runtime for the package
+          example: "docker"
+        runtime_arguments:
+          type: array
+          description: A list of arguments to be passed to the package's runtime command
+          items:
+            $ref: '#/components/schemas/Argument'
+        package_arguments:
+          type: array
+          description: A list of arguments to be passed to the package's binary
+          items:
+            $ref: '#/components/schemas/Argument'
+        environment_variables:
+          type: array
+          description: Environment variables to be set when running the package
+          items:
+            $ref: '#/components/schemas/KeyValueInput'
+    
+    Input:
+      type: object
+      properties:
+        description:
+          description: A description of the input
+          type: string
+        is_required:
+          type: boolean
+          default: false
+        format:
+          type: string
+          enum: [string, number, boolean, filepath]
+          default: string
+        value:
+          type: string
+        is_secret:
+          type: boolean
+          default: false
+        default:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+    
+    InputWithVariables:
+      allOf:
+        - $ref: '#/components/schemas/Input'
+        - type: object
+          properties:
+            variables:
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/Input'
+    
+    KeyValueInput:
+      allOf:
+        - $ref: '#/components/schemas/InputWithVariables'
+        - type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+              description: Name of the header or environment variable
+              example: "API_KEY"
+    
+    Argument:
+      allOf:
+        - $ref: '#/components/schemas/InputWithVariables'
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum: [positional, named]
+              example: "positional"
+            name:
+              type: string
+              description: The flag name (for named arguments)
+              example: "--port"
+            is_repeated:
+              type: boolean
+              default: false
+            value_hint:
+              type: string
+              example: "file_path"
+    
+    Remote:
+      type: object
+      required:
+        - transport_type
+        - url
+      properties:
+        transport_type:
+          type: string
+          enum: [streamable, sse]
+          description: Transport protocol type
+          example: "sse"
+        url:
+          type: string
+          format: uri
+          description: Remote server URL
+          example: "https://mcp-fs.example.com/sse"
+        headers:
+          type: array
+          description: HTTP headers to include
+          items:
+            $ref: '#/components/schemas/KeyValueInput'

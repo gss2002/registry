@@ -10,5 +10,4 @@ The centralized, publicly available catalog ("Official MCP Registry") needs addi
 
 References:
 - [openapi.yaml](./openapi.yaml) - A reusable API specification (MCP Server Registry API) that anyone building any sort of "MCP server registry" should consider adopting / aligning with.
-- [examples.md](./api_examples.md) - Example manifestations of the OpenAPI specification
-- [official-registry-openapi.ayml](./official-registry-openapi.yaml) - The specification backing the Official MCP Registry; a derivative of the MCP Server Registry API specification.
+- [swagger.yaml](../../internal/docs/swagger.yaml) - The specification backing the Official MCP Registry; a derivative of the MCP Server Registry API specification.
